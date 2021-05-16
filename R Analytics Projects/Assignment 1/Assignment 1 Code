@@ -1,0 +1,127 @@
+# Assignment 1 Homework- Data Visualization and Feature Engineering
+
+# Load CSV file
+incomedb <- read.csv("income.csv")
+incomedb <- read.csv("income.csv", fileEncoding = "UTF-8-BOM")
+View(incomedb)
+incomedbcontinuous <- incomedb[, c(1,3,4,6,9)] # Database for the continuous variables
+
+require("psych")
+
+#Data Visualization
+
+# Basic Statistics (Data Visualization Question 1)
+summary(incomedb$age) # Summary for Age
+summary(incomedb$address) # Summary for Address
+summary(incomedb$income) # Summary for Income
+summary(incomedb$employ) # Summary for Employment
+summary(incomedb$reside) # Summary for Residing
+
+
+# Boxplots (Data Visualization Question 2)
+boxplot(incomedb$age, xlab = "Age in Year") # Boxplot for Age
+boxplot(incomedb$address, xlab = "Years at Current Address") # Boxplot for Address
+boxplot(incomedb$income, xlab = "Household Income in Thousands") # Boxplot for Income
+boxplot(incomedb$employ, xlab = "Year at Current Employer") # Boxplot for Employment
+boxplot(incomedb$reside, xlab = "Age in Number of People in Household") # Boxplot for Reside
+boxplot(incomedb$income ~incomedb$ed, xlab = "Level of Education", ylab= "Household Income in Thousands") # Boxplot for Income by Education Level
+boxplot(incomedb$income ~incomedb$marital, xlab = "Marital Status", ylab= "Household Income in Thousands") # Boxplot for Income by Marital Status
+boxplot(incomedb$income ~incomedb$jobsat, xlab = "Job Satisfaction", ylab= "Household Income in Thousands") # Boxplot for Income by Job Satisfaction
+boxplot(incomedb$income ~incomedb$gender, xlab = "Gender", ylab= "Household Income in Thousands") # Boxplot for Income by Gender
+
+# Histograms (Data Visualization Question 3)
+h <- hist(incomedb$age, xlab = "Age in Year") # Histogram for Age
+h <- hist(incomedb$address, xlab = "Years at Current Address") # Histogram for Address
+h <- hist(incomedb$income, xlab = "Household Income in Thousands") # Histogram for Income
+h <- hist(incomedb$employ, xlab = "Years at current Employer") # Histogram for Employment
+h <- hist(incomedb$reside, xlab = "Number of People in the Household") # Histogram for Risiding
+
+# Correlation (Data Visualization Question 4)
+cor(incomedbcontinuous)
+
+# Scatter Plots (Data Visualization Question 5)
+plot (incomedb$age, incomedb$income, 
+      main = "Age X Income",
+      xlab = "Age in Year", ylab = "Household Income in Thousands") #Scatter Plot for Age
+plot (incomedb$address, incomedb$income, 
+      main = "Address X Income",
+      xlab = "Years at Current Address", ylab = "Household Income in Thousands") #Scatter Plot for Address
+plot (incomedb$employ, incomedb$income, 
+      main = "Employment X Income",
+      xlab = "Year at Current Employer", ylab = "Household Income in Thousands") #Scatter Plot for Employment
+plot (incomedb$reside, incomedb$income, 
+      main = "People Residing X Income",
+      xlab = "Number of People in the Houshold", ylab = "Household Income in Thousands") #Scatter Plot for Residing
+
+# Frequency Charts (Data Visualization Question 6)
+transmarital <- table(incomedb$marital) #Frequency Chart for Marital Status
+transmarital
+transed <- table(incomedb$ed) #Frequency Chart for Education Level
+transed
+transjobsat <- table(incomedb$jobsat) #Frequency Chart for Job Satisfaction
+transjobsat
+transgender <- table(incomedb$gender) #Frequency Chart for Gender
+transgender
+
+# Cross tabulations (Data Visualization Question 7)
+ttabmaritaled <- table(incomedb$marital, incomedb$ed) # Marital Status X Education Level
+ttabmaritaled
+ttabmaritaljobsat <- table(incomedb$marital, incomedb$jobsat) # Marital Status X Job Satisfaction
+ttabmaritaljobsat
+ttabedjobsat <- table(incomedb$ed, incomedb$jobsat) # Education Level X Job Status
+ttabedjobsat
+
+# Feature Engineering
+
+# Converting the predictor variable gender into dummy variables (Feature Engineering Question 1)
+incomedb$male = ifelse(incomedb$gender == 'm',1,0) # Dummy coding for male
+incomedb$female = ifelse(incomedb$gender == 'f',1,0) # Dummy coding for female
+
+# identify any outliers (Feature Engineering Question 2)
+boxplot(incomedb$income)$out #Finding Outlier for Income
+boxplot(incomedb$age)$out #Finding Outlier for Age
+boxplot(incomedb$address)$out #Finding Outlier for Address
+boxplot(incomedb$marital)$out #Finding Outlier for Marital Status
+boxplot(incomedb$ed)$out #Finding Outlier for Education Level
+boxplot(incomedb$employ)$out #Finding Outlier for Employment
+boxplot(incomedb$jobsat)$out #Finding Outlier for Job Satisfaction
+boxplot(incomedb$gender)$out #Finding Outlier for Gender
+boxplot(incomedb$reside)$out #Finding Outlier for Residing
+# For the outliers that I find a good tip to try is to remove them from the data set completely.
+# This will make my data much simpler and easier to read, and then this will make the calculations 
+# much more accurate.
+
+# Identifying Missing Values (Feature Engineering Question 3)
+sum(is.na(incomedb$age)) # Identifying Missing Value for Age
+sum(is.na(incomedb$address)) # Identifying Missing Value for Address
+sum(is.na(incomedb$marital)) # Identifying Missing Value for Marital Status
+sum(is.na(incomedb$income)) # Identifying Missing Value for Income
+sum(is.na(incomedb$ed)) # Identifying Missing Value for Education Level
+sum(is.na(incomedb$employ)) # Identifying Missing Value for Employment
+sum(is.na(incomedb$jobsat)) # Identifying Missing Value for Job Satisfaction
+sum(is.na(incomedb$gender)) # Identifying Missing Value for Gender
+sum(is.na(incomedb$reside)) # Identifying Missing Value for Residing
+# For the missing values, once I find them there are a couple things I can do when addressing this
+# issue. One thing I can try is to just omit these data points from my data completely. This will
+# make my data just the values I got and not any estimated data points I may try to add from using
+# the mean to try to get a value for a missing value. To do this one would simply put 
+# incomedb.omit <- na.omit(incomedb$type) (type meaning which variable I use). Another way would be
+# to enter the mean of my data. This will make my calculations a lot nicer and it would help get rid
+# of the missing data. To do this I would do Type.avg <- ifelse(is.na(incomedb$Type), mean(incomedb$Type, na.rm=TRUE), incomedb$Type)
+# with Type being the variable I am using. But in this since there is no missing variables you wouldn't
+# have to do this.
+
+# Determine if you should perform a transformation on any of the continuous variables (Feature Engineering Question 4)
+
+# After looking at the Histograms, the only set of data in the continuous variables that isn't skewed is
+# the age variable. Because of this I would decide that it would be helpful to perform a log transformation
+# because a log transformation makes skewed data less skewed, and this would help read the data better. To
+# do this I would type TypeTransform <- log(Type.avg) (Type is variable you use) and this would transform
+# the data.
+
+
+# Creating a New Predictor Variable (Feature Engineering Question 5)
+incomedb$addresstimesfive <- incomedb$address * 5
+incomedb$employtimesfive <- incomedb$employ * 5
+# Created this variable because I thought it would be helpful to spread out the data for these two variables
+# since they are cluttered on the boxplots.
