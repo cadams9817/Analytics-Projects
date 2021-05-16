@@ -1,0 +1,780 @@
+%matplotlib inline
+import numpy as np
+import seaborn as sns
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn import preprocessing
+import matplotlib.pylab as plt
+
+# Upload the Charles Book Club Data
+charles_df = pd.read_excel('CharlesBookClub-Project1.xlsx', sheet_name="CharlesBookClub")
+charles_df.head(15)
+
+# Creates a variable to show the percentage of missing of each variable. Returns information in descending order from greatest
+# percent missing to least missing
+def percent_missing_charles(data):
+    return data.isnull().sum().divide(len(data)).sort_values(ascending=False)
+
+# Shows all of the percentages of missing variables for each column
+print(percent_missing_charles(charles_df))
+
+from sklearn.impute import SimpleImputer
+
+# Mean/Median imputation only works on numeric variables
+charles_df_numeric = charles_df.select_dtypes(include = np.number)
+charles_numeric = charles_df_numeric.columns
+
+# Imputation process
+imputer = SimpleImputer(missing_values=np.nan, strategy='median')
+charles_imputed_data = imputer.fit_transform(charles_df_numeric).round(0)
+
+# Make a data frame out of it
+charles_imputed_data = pd.DataFrame(charles_imputed_data, columns=charles_numeric)
+charles_imputed_data.head(15)
+
+def percent_missing(data):
+    return data.isnull().sum().divide(len(data)).sort_values(ascending=False)
+
+# Check number of missing
+print(percent_missing(charles_imputed_data))
+
+#New name for the dataset that contains mean, min, max, standard deviation, and median of M, R, and F in the 
+# Charles Book Club dataset
+charles_df_summary_statistics = pd.DataFrame({'Minimum': charles_imputed_data[['M','F','R']].min(), \
+                                              'Mean': charles_imputed_data[['M','F','R']].mean(), \
+                                              'Median': charles_imputed_data[['M','F','R']].median(), \
+                       'Standard Deviation': charles_imputed_data[['M','F','R']].std(), \
+                                              'Maximum': charles_imputed_data[['M','F','R']].max()})
+charles_df_summary_statistics
+
+# Dummy variable for Mcode.
+mcode_dummy = pd.get_dummies(charles_imputed_data["Mcode"], prefix="Mcode")
+mcode_dummy.head()
+
+# Dummy variable for Rcode.
+rcode_dummy = pd.get_dummies(charles_imputed_data["Rcode"], prefix="Rcode")
+rcode_dummy.head()
+
+# Dummy variable for Fcode.
+fcode_dummy = pd.get_dummies(charles_imputed_data["Fcode"], prefix="Fcode")
+fcode_dummy.head()
+
+new_charles = pd.concat([charles_imputed_data, rcode_dummy, mcode_dummy, fcode_dummy], axis=1)
+new_charles
+
+# Check to see if the merge worked
+print("Number of rows BEFORE merging:", charles_imputed_data.shape[0])
+print("Number of columns BEFORE merging:", charles_imputed_data.shape[1])
+
+print("\nNumber of rows AFTER merging:", new_charles.shape[0])
+print("Number of columns AFTER merging:", new_charles.shape[1])
+
+# Code to find the percentage of gender in the Charles Book Club Data
+gender_count = new_charles['Gender'].value_counts(normalize=True) #Count of all variables in the Gender field
+
+# Code to create the Bar Graph for gender as a percentage in the Charles Book Club Data
+gender_count.plot(kind='bar', figsize=[10, 6], color=['b','r'])
+plt.title("Percentage of customers based on Gender")
+plt.xlabel("Gender")
+plt.ylabel("Percentage")
+plt.show()
+
+# Code to find out the exact percentage for gender in the data set
+gender_new_charles = new_charles['Gender'].value_counts(normalize=True) * 100
+
+print(gender_new_charles)
+
+# Code to find the percentage of customers who bought The Art History of FLorence in the Charles Book Club Data
+florence_count = new_charles['Florence'].value_counts(normalize=True) #Count of all variables in the Florence field
+
+# Code to create the Bar Graph for customers who bought The Art History of Florence as a percentage in Charles Book Club Data
+florence_count.plot(kind='bar', figsize=[10, 6], color=['b','r'])
+plt.title("Percentage of customers who bought The Art History of Florence")
+plt.xlabel("Purchased/Did Not Purchase")
+plt.ylabel("Percentage")
+plt.show()
+
+# Code to find out the exact percentage for customers who bought The Art History of Florence in the data set
+florence_new_charles = new_charles['Florence'].value_counts(normalize=True) * 100
+
+print(florence_new_charles)
+
+florence_avg = new_charles.groupby('Florence').mean() #Average of ALL variables by Florence
+
+# Code to only show the average for the M, R, and F variables
+m_avg = florence_avg.M
+r_avg = florence_avg.R
+f_avg = florence_avg.F
+
+# Get bar chart of average for M, R, and F variables
+r_avg.plot(kind='bar', figsize=[10, 6], color=['b','r'])
+plt.title("Average time since last purchase by Florence")
+plt.xlabel("Purchased Florence or Not")
+plt.ylabel("Average time since last purchase")
+plt.show()
+
+m_avg.plot(kind='bar', figsize=[10, 6], color=['b','r'])
+plt.title("Average Money spent on a companies product over a period by Florence")
+plt.xlabel("Purchased Florence or Not")
+plt.ylabel("Average Amount spent on company's product")
+plt.show()
+
+f_avg.plot(kind='bar', figsize=[10, 6], color=['b','r'])
+plt.title("Average number of previous purchases from the company over a period by Florence")
+plt.xlabel("Purchased Florence or Not")
+plt.ylabel("Average number of previous purchases from the company over a period")
+plt.show()
+
+# Code to set up the scatter plot matrix
+charles_matrix = new_charles[['FirstPurch', 'ChildBks', 'YouthBks', 'CookBks', 'DoItYBks', 'RefBks', 'ArtBks', 'GeogBks', \
+                              'ItalCook', 'ItalAtlas', 'ItalArt', 'Related Purchase']]
+
+pd.plotting.scatter_matrix(charles_matrix, figsize=(20, 20), diagonal='hist')
+plt.show()
+
+# Code to show the scatter plots for the three variables we chose
+new_charles.plot.scatter(x='Related Purchase', y='GeogBks')
+plt.ylabel("Number of Related Purchases")
+plt.xlabel("Number of Geography Books Purchased")
+plt.ylabel("Number of Related Purchases")
+plt.title("Scatter Plot")
+plt.show()
+
+new_charles.plot.scatter(x='FirstPurch', y='CookBks')
+plt.ylabel("Months since First Purchase")
+plt.xlabel("Number of Cook Books Purchased")
+plt.ylabel("Months since First Purchase")
+plt.title("Scatter Plot")
+plt.show()
+
+new_charles.plot.scatter(x='FirstPurch', y='ArtBks')
+plt.ylabel("Months since First Purchase")
+plt.xlabel("Number of Art Books Purchased")
+plt.ylabel("Months since First Purchase")
+plt.title("Scatter Plot")
+plt.show()
+
+#Get correlation between the variables in question 3a
+corr = new_charles[['FirstPurch', 'ChildBks', 'YouthBks', 'CookBks', 'DoItYBks', 'RefBks', 'ArtBks', 'GeogBks', 'ItalCook', \
+                    'ItalAtlas', 'ItalArt', 'Related Purchase']].corr()
+
+# Code to create the correlation matrix
+fig, ax = plt.subplots()
+fig.set_size_inches(11, 7)
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="RdBu", center=0, ax=ax)
+
+plt.show()
+
+# Code to create a side-by-side boxplot
+fig, axes = plt.subplots(nrows=1, ncols=3)
+new_charles.boxplot(column="M", by="Florence", ax=axes[0])
+new_charles.boxplot(column="R", by="Florence", ax=axes[1])
+new_charles.boxplot(column="F", by="Florence", ax=axes[2])
+plt.suptitle('')
+plt.tight_layout()
+plt.show()
+
+# Code deleting the cells specified
+new_charles_del = new_charles.drop(columns=['Seq#', 'ID#', 'No_Florence', 'Florence'])
+new_charles_del
+
+# Code specifying Yes_Florence is the dependent variable and standardizing and splitting the data
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# Identify dependent and independent variables
+y = new_charles_del['Yes_Florence']
+X = new_charles_del.drop(columns=['Yes_Florence'])
+
+#Standardize independent variables in ALL data (zero mean and unit variance)
+std_X = StandardScaler().fit_transform(X)
+std_X_df = pd.DataFrame(std_X, columns=X.columns)
+
+# Partition data into training (80%) and testing (20%)
+train_X, test_X, train_y, test_y = train_test_split(std_X_df, y, test_size=0.2, random_state=1)
+
+# Scaling the data for MLP classifier. Values will be between 0 and 1
+from sklearn.neural_network import MLPClassifier
+from dmba import classificationSummary
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import cross_val_score
+
+scaler = MinMaxScaler()
+scaled_data_train = pd.DataFrame(scaler.fit_transform(train_X), columns=train_X.columns)
+scaled_data_test = pd.DataFrame(scaler.fit_transform(test_X), columns=test_X.columns)
+
+mlp = MLPClassifier(hidden_layer_sizes=3, activation='logistic', solver='lbfgs', random_state=1, max_iter=300)
+mlp.fit(scaled_data_train, train_y)
+
+mlp = MLPClassifier(hidden_layer_sizes=3, activation='logistic', solver='lbfgs', random_state=1, max_iter=300)
+mlp.fit(scaled_data_train, train_y)
+
+print("***Confusion Matrix and accuracy for the training data")
+classificationSummary(train_y, mlp.predict(scaled_data_train))
+
+from sklearn.linear_model import LogisticRegression
+
+# fit a logistic regression
+log = LogisticRegression(fit_intercept=True, C=1e42, solver='liblinear')
+log.fit(train_X, train_y)
+
+print("***Confusion Matrix and accuracy for the training data")
+classificationSummary(train_y, log.predict(train_X))
+
+from sklearn.neighbors import KNeighborsClassifier
+
+# fit kNN model
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(train_X, train_y)
+
+print("***Confusion Matrix and accuracy for the training data")
+classificationSummary(train_y, knn.predict(train_X))
+
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+# fit discriminant analysis model
+da = LinearDiscriminantAnalysis()
+da.fit(train_X, train_y)
+
+print("***Confusion Matrix and accuracy for the training data")
+classificationSummary(train_y, da.predict(train_X))
+
+from sklearn.tree import DecisionTreeClassifier
+from dmba import classificationSummary
+from dmba import plotDecisionTree
+
+# fit decision tree model
+full_dt = DecisionTreeClassifier(random_state=0)
+full_dt.fit(train_X, train_y)
+
+# Plotting the decision tree model
+column_names = train_X.columns
+plotDecisionTree(full_dt, feature_names=column_names, class_names=full_dt.classes_)
+
+from sklearn.model_selection import cross_val_score, GridSearchCV
+
+# Improve search result based on initial search
+parameters = {
+    'max_depth': list(range(2, 10)), 
+    'min_samples_split': list(range(10, 20)), 
+    'min_impurity_decrease': [0.0009, 0.001, 0.0011],
+}
+
+gs = GridSearchCV(DecisionTreeClassifier(), parameters, cv=10, n_jobs=-1)
+gs.fit(train_X, train_y)
+print('Improved score: ', gs.best_score_)
+print('Improved parameters: ', gs.best_params_)
+
+best_tree = gs.best_estimator_
+
+print("***Confusion Matrix and accuracy for the training data")
+print(classificationSummary(train_y, best_tree.predict(train_X)))
+
+# Plot the best tree
+plotDecisionTree(best_tree, feature_names=train_X.columns)
+
+# Ten-fold cross-validation of the Neural Network classifier
+scores = cross_val_score(mlp, test_X, test_y, cv = 10, scoring = "accuracy")
+
+# Print average accuracy score
+mlp_avg_acc = scores.mean()
+
+print(scores)
+print("Average accuracy score:", round(mlp_avg_acc, 3))
+
+# Ten-fold cross-validation of the full Logistic Regression classifier
+scores = cross_val_score(log, test_X, test_y, cv=10)
+
+# Print average accuracy score
+log_avg_acc = scores.mean()
+
+print(scores)
+print("Average accuracy score:", round(log_avg_acc, 3))
+
+# Ten-fold cross-validation of the full decision tree classifier
+scores = cross_val_score(knn, test_X, test_y, cv=10)
+
+# Print average accuracy score
+knn_avg_acc = scores.mean()
+
+print(scores)
+print("Average accuracy score:", round(knn_avg_acc, 3))
+
+# Ten-fold cross-validation of the full Discriminant Analysis classifier
+scores = cross_val_score(da, test_X, test_y, cv=10)
+
+# Print average accuracy score
+da_avg_acc = scores.mean()
+
+print(scores)
+print("Average accuracy score:", round(da_avg_acc, 3))
+
+# Ten-fold cross-validation of the full Decision Tree classifier
+scores = cross_val_score(full_dt, test_X, test_y, cv=10)
+
+# Print average accuracy score
+dt_avg_acc = scores.mean()
+
+print(scores)
+print("Average accuracy score:", round(dt_avg_acc, 3))
+
+# MLP class label for training and testing data
+mlp_pred_train = mlp.predict(scaled_data_train)
+mlp_pred_test = mlp.predict(scaled_data_test)
+
+# Decision Tree (Best) class label for training and testing data
+dt_pred_train = best_tree.predict(train_X)
+dt_pred_test = best_tree.predict(test_X)
+
+# kNN class label for training and testing data
+knn_pred_train = knn.predict(train_X)
+knn_pred_test = knn.predict(test_X)
+
+# Discriminant analysis class label for training and testing data
+da_pred_train = da.predict(train_X)
+da_pred_test = da.predict(test_X)
+
+# Logistic regression class label for training and testing data
+log_pred_train = log.predict(train_X)
+log_pred_test = log.predict(test_X)
+
+# Summary of training data predictions
+pred_summary_pred = pd.DataFrame({"Actual_Class": test_y, "MLP_Prediction":mlp_pred_test,\
+                             "DT_Prediction":dt_pred_test,\
+                             "kNN_Prediction":knn_pred_test,\
+                             "LDA_Prediction":da_pred_test,\
+                             "Logistic_Prediction":log_pred_test})
+
+print("Class predictions for testing data using predictions")
+pred_summary_pred.head(10)
+
+# MLP class label for training and testing data
+mlp_prob_train = mlp.predict_proba(scaled_data_train)
+mlp_prob_test = mlp.predict_proba(scaled_data_test)
+
+# Decision Tree class label for training and testing data
+dt_prob_train = best_tree.predict_proba(train_X)
+dt_prob_test = best_tree.predict_proba(test_X)
+
+# kNN class label for training and testing data
+knn_prob_train = knn.predict_proba(train_X)
+knn_prob_test = knn.predict_proba(test_X)
+
+# discriminant analysis class label for training and testing data
+da_prob_train = da.predict_proba(train_X)
+da_prob_test = da.predict_proba(test_X)
+
+# discriminant analysis class label for training and testing data
+log_prob_train = log.predict_proba(train_X)
+log_prob_test = log.predict_proba(test_X)
+
+# Summary of training data predictions
+pred_summary = pd.DataFrame({"Actual_Class": test_y, "MLP_Probability_P(Y=0)": mlp_prob_test[:,0],\
+                             "DT_Probability_P(Y=0)": dt_prob_test[:,0],\
+                             "kNN_Probability_P(Y=0)": knn_prob_test[:,0],\
+                             "DA_Probability_P(Y=0)":da_prob_test[:,0],\
+                             "Logistic_Probability_P(Y=0)":log_prob_test[:,0]})
+
+print("Class predictions for testing data using probabilities")
+pred_summary.head()
+
+from sklearn.metrics import accuracy_score
+
+# Accuracy rate for Decision Tree, kNN, Discriminant Analysis and logistic Regression
+mlp_test_accuracy = round(accuracy_score(test_y, mlp_pred_test), 3)
+dt_test_accuracy = round(accuracy_score(test_y, dt_pred_test), 3)
+knn_test_accuracy = round(accuracy_score(test_y, knn_pred_test), 3)
+da_test_accuracy = round(accuracy_score(test_y, da_pred_test), 3)
+log_test_accuracy = round(accuracy_score(test_y, log_pred_test), 3)
+
+# Get misclassification rate
+mlp_test_misclass = round(1 - mlp_test_accuracy, 3)
+dt_test_misclass = round(1 - dt_test_accuracy, 3)
+knn_test_misclass = round(1 - knn_test_accuracy, 3)
+da_test_misclass = round(1 - da_test_accuracy, 3)
+log_test_misclass = round(1 - log_test_accuracy, 3)
+
+#Using a model test using the testing data
+print("\nMisclassification rate for MLP:", mlp_test_misclass)
+print("Misclassification rate for decision tree:", dt_test_misclass)
+print("Misclassification rate for kNN:", knn_test_misclass)
+print("Misclassification rate for linear discriminant analysis:", da_test_misclass)
+print("Misclassification rate for logistic regression:", log_test_misclass)
+
+mlp_test_misclass = round(1 - mlp_avg_acc, 3)
+dt_test_misclass = round(1 - dt_avg_acc, 3)
+knn_test_misclass = round(1 - knn_avg_acc, 3)
+da_test_misclass = round(1 - da_avg_acc, 3)
+log_test_misclass = round(1 - log_avg_acc, 3)
+
+# Using the 10-fold cross validation
+print("\nMisclassification rate for MLP:", mlp_test_misclass)
+print("Misclassification rate for decision tree:", dt_test_misclass)
+print("Misclassification rate for kNN:", knn_test_misclass)
+print("Misclassification rate for linear discriminant analysis:", da_test_misclass)
+print("Misclassification rate for logistic regression:", log_test_misclass)
+
+from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
+
+# Calculate AUC for test data
+mlp_auc_test = roc_auc_score(test_y, mlp_pred_test)
+dt_auc_test = roc_auc_score(test_y, dt_pred_test)
+knn_auc_test = roc_auc_score(test_y, knn_pred_test)
+da_auc_test = roc_auc_score(test_y, da_pred_test)
+log_auc_test = roc_auc_score(test_y, log_pred_test)
+
+# calculate fpr and tpr for all models
+mlp_fpr_test, mlp_tpr_test, _ = roc_curve(test_y, mlp_pred_test)
+dt_fpr_test, dt_tpr_test, _ = roc_curve(test_y, dt_pred_test)
+knn_fpr_test, knn_tpr_test, _ = roc_curve(test_y, knn_pred_test)
+da_fpr_test, da_tpr_test, _ = roc_curve(test_y, da_pred_test)
+log_fpr_test, log_tpr_test, _ = roc_curve(test_y, log_pred_test)
+
+# Plotting
+plt.plot(mlp_fpr_test, mlp_tpr_test, linestyle='--', label="{}{:.3f}".format("MLP ROC=", mlp_auc_test))
+plt.plot(dt_fpr_test, dt_tpr_test, linestyle='--', label="{}{:.3f}".format("DT ROC=", dt_auc_test))
+plt.plot(knn_fpr_test, knn_tpr_test, linestyle='--', label="{}{:.3f}".format("kNN ROC=", knn_auc_test))
+plt.plot(da_fpr_test, da_tpr_test, linestyle='--', label="{}{:.3f}".format("LDA ROC=", da_auc_test))
+plt.plot(log_fpr_test, log_tpr_test, linestyle='--', label="{}{:.3f}".format("Log. Reg ROC=", log_auc_test))
+plt.plot([0, 1], [0, 1], linestyle='solid', c='k')
+
+plt.title("NN vs. DT vs. LDA vs. Logistic Regression vs KNN")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.legend(loc='lower right')
+plt.show()
+
+from dmba import liftChart
+
+mlp_test_pred_class = mlp.predict(test_X)
+mlp_test_pred_prob = mlp.predict_proba(test_X)
+
+mlp_pred_summary = pd.DataFrame({"Actual_Class": test_y, "Predicted_Class": mlp_pred_test,\
+                             "P(Y=0)":mlp_test_pred_prob[:,0], "P(Y=1)":mlp_test_pred_prob[:,1]})
+
+# Create the Gains table
+mlp_gains_table = mlp_pred_summary.sort_values(by='P(Y=1)', ascending=False)
+
+liftChart(mlp_gains_table.Actual_Class)
+
+plt.show()
+
+log_test_pred_class = log.predict(test_X)
+log_test_pred_prob = log.predict_proba(test_X)
+
+log_pred_summary = pd.DataFrame({"Actual_Class": test_y, "Predicted_Class": log_pred_test,\
+                             "P(Y=0)":log_test_pred_prob[:,0], "P(Y=1)":log_test_pred_prob[:,1]})
+
+# Create the Gains table
+log_gains_table = log_pred_summary.sort_values(by='P(Y=1)', ascending=False)
+
+liftChart(log_gains_table.Actual_Class)
+
+plt.show()
+
+knn_test_pred_class = knn.predict(test_X)
+knn_test_pred_prob = knn.predict_proba(test_X)
+
+knn_pred_summary = pd.DataFrame({"Actual_Class": test_y, "Predicted_Class": knn_pred_test,\
+                             "P(Y=0)":knn_test_pred_prob[:,0], "P(Y=1)":knn_test_pred_prob[:,1]})
+
+# Create the Gains table
+knn_gains_table = knn_pred_summary.sort_values(by='P(Y=1)', ascending=False)
+
+liftChart(knn_gains_table.Actual_Class)
+
+plt.show()
+
+da_test_pred_class = da.predict(test_X)
+da_test_pred_prob = da.predict_proba(test_X)
+
+da_pred_summary = pd.DataFrame({"Actual_Class": test_y, "Predicted_Class": da_pred_test,\
+                             "P(Y=0)":da_test_pred_prob[:,0], "P(Y=1)":da_test_pred_prob[:,1]})
+
+# Create the Gains table
+da_gains_table = da_pred_summary.sort_values(by='P(Y=1)', ascending=False)
+
+liftChart(da_gains_table.Actual_Class)
+
+plt.show()
+
+# dt_test_pred_class = best_tree.predict(test_X)
+dt_test_pred_prob = best_tree.predict_proba(test_X)
+
+dt_pred_summary = pd.DataFrame({"Actual_Class": test_y, "Predicted_Class": dt_pred_test,\
+                             "P(Y=0)":dt_test_pred_prob[:,0], "P(Y=1)":dt_test_pred_prob[:,1]})
+
+# Create the Gains table
+dt_gains_table = dt_pred_summary.sort_values(by='P(Y=1)', ascending=False)
+
+liftChart(dt_gains_table.Actual_Class)
+
+plt.show()
+
+# Code deleting the cells specified, need to delete Florence as well because it tells us if the book was bought or not.
+new_charles_modeling = new_charles.drop(columns=['Seq#', 'ID#', 'No_Florence', 'Florence', 'Mcode', 'Rcode', 'Fcode'])
+new_charles_modeling
+
+charles_modeling = new_charles_modeling[new_charles_modeling.Yes_Florence == 1]
+charles_modeling
+
+# Code specifying the M variable is the dependent variable and standardizing and splitting the data
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# Identify dependent and independent variables
+y = charles_modeling['M']
+X = charles_modeling.drop(columns=['M'])
+
+#Standardize independent variables in ALL data (zero mean and unit variance)
+std_X = StandardScaler().fit_transform(X)
+std_X_df = pd.DataFrame(std_X, columns=X.columns)
+
+# Partition data into training (80%) and testing (20%)
+train_X, test_X, train_y, test_y = train_test_split(std_X_df, y, test_size=0.2, random_state=1)
+
+from sklearn.linear_model import LinearRegression
+from dmba import adjusted_r2_score
+
+# Function to do a linear regression (DO NOT CHANGE. LEAVE AS IS)
+def train_model(variables): #(DO NOT CHANGE. LEAVE AS IS)
+    if len(variables) == 0:
+        return None
+    model = LinearRegression()
+    model.fit(train_X[variables], train_y)
+    return model
+
+# Function to assess the quality of the model using ajusted R-squared (DO NOT CHANGE. LEAVE AS IS)
+def score_model(model, variables): #(DO NOT CHANGE. LEAVE AS IS)
+    if len(variables) == 0:
+        return AIC_score(train_y, [train_y.mean()] * len(train_y), model, df=1)
+    return AIC_score(train_y, model.predict(train_X[variables]), model)
+    
+from dmba import forward_selection
+from dmba import AIC_score
+from dmba import regressionSummary
+
+# Names of all variables in the training data
+variable_names = train_X.columns
+
+# Call the forward selection function
+fs_best_model, fs_best_variables = forward_selection(variable_names, train_model, score_model, verbose=False)
+fs_best_variables_5 = fs_best_variables[:5]
+
+from dmba import backward_elimination
+
+# Names of all variables in the training data
+variable_names = train_X.columns
+
+# Call the backward elimination function 
+be_best_model, be_best_variables = backward_elimination(variable_names, train_model, score_model, verbose=False)
+be_best_variables_5 = be_best_variables[:5]
+
+from dmba import stepwise_selection
+
+# Names of all variables in the training data
+variable_names = train_X.columns
+
+# Call the stepwise regression function
+sr_best_model, sr_best_variables = stepwise_selection(variable_names, train_model, score_model, verbose=False)
+sr_best_variables_5 = sr_best_variables[:5]
+
+from sklearn.tree import DecisionTreeRegressor
+
+# user grid search to find optimized tree
+dt_grid = {
+    'max_depth': [5, 10, 15], 
+    'min_impurity_decrease': [0, 0.001, 0.005], 
+    'min_samples_split': [10, 20, 30]
+}
+
+dt_gs = GridSearchCV(DecisionTreeRegressor(random_state=28), dt_grid, cv=10, n_jobs=-1)
+dt_gs.fit(train_X, train_y)
+
+# Best decision tree from the grid search
+best_dt = dt_gs.best_estimator_
+
+# Print best parameters of decision trees
+print('Best parameters: ', dt_gs.best_params_)
+
+# Modeling Ramdom forest using M
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+
+# user grid search to find optimized random forest parameters
+rf_grid = {
+    'max_depth': [5, 10, 15], 
+    'min_impurity_decrease': [0, 0.001, 0.005], 
+    'min_samples_split': [10, 20, 30], 
+}
+
+rf_gs = GridSearchCV(RandomForestRegressor(random_state=15), rf_grid, cv=10, n_jobs=-1)
+rf_gs.fit(train_X, train_y)
+
+# Best random forest from the grid search
+best_rf = rf_gs.best_estimator_
+
+# Print best parameters of random forest
+print('Best parameters: ', rf_gs.best_params_)
+
+from sklearn.ensemble import GradientBoostingRegressor
+
+# user grid search to find optimized random forest parameters
+boost_grid = {
+    'max_depth': [5, 10, 15], 
+    'min_impurity_decrease': [0, 0.001, 0.005], 
+    'min_samples_split': [10, 20, 30]
+}
+
+boost_gs = GridSearchCV(GradientBoostingRegressor(random_state=15), boost_grid, cv=10, n_jobs=-1)
+boost_gs.fit(train_X, train_y)
+
+# Best boost from the grid search
+best_boost = boost_gs.best_estimator_
+
+# Print best parameters of boosting
+print('Best parameters: ', boost_gs.best_params_)
+
+print(fs_best_variables_5)
+
+print(be_best_variables_5)
+
+print(sr_best_variables_5)
+
+# Get important variables
+dt_importances = best_dt.feature_importances_
+
+# Important features
+imp_dt_features = pd.DataFrame({'feature': train_X.columns, 'dt_importance': dt_importances})
+imp_dt_features_sort = imp_dt_features.sort_values(by="dt_importance", ascending=False)
+
+# Plotting variable importance
+imp_dt_features_sort.head(5).plot(kind='barh', x='feature', legend=False)
+plt.title("Decision Tree Variable Importance")
+plt.tight_layout()
+plt.show()
+
+# Get important variables
+rf_importances = best_rf.feature_importances_
+
+# Important features
+imp_rf_features = pd.DataFrame({'feature': train_X.columns, 'rf_importance': rf_importances})
+imp_rf_features_sort = imp_rf_features.sort_values(by="rf_importance", ascending=False)
+
+# Plotting variable importance
+imp_rf_features_sort.head(5).plot(kind='barh', x='feature', legend=False)
+plt.title("Random Forest Variable Importance")
+plt.tight_layout()
+plt.show()
+
+# Get important variables
+boost_importances = best_boost.feature_importances_
+
+# Important features
+imp_boost_features = pd.DataFrame({'feature': train_X.columns, 'boost_importance': boost_importances})
+imp_boost_features_sort = imp_boost_features.sort_values(by="boost_importance", ascending=False)
+
+# Plotting variable importance
+imp_boost_features_sort.head(5).plot(kind='barh', x='feature', legend=False)
+plt.title("Boosting Variable Importance")
+plt.tight_layout()
+plt.show()
+
+# Fit a regression with top 5 important features
+fs_train_X = train_X[fs_best_variables_5]
+fs_model_5 = LinearRegression()
+fs_model_5.fit(fs_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+fs_test_X = test_X[fs_best_variables_5]
+
+# Model Prediction on top 5 important features
+fs_pred_test = fs_model_5.predict(fs_test_X)
+
+# Fit a regression with top 5 important features
+be_train_X = train_X[be_best_variables_5]
+be_model_5 = LinearRegression()
+be_model_5.fit(be_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+be_test_X = test_X[be_best_variables_5]
+
+# Model Prediction on top 5 important features
+be_pred_test = be_model_5.predict(be_test_X)
+
+# Fit a regression with top 5 important features
+sr_train_X = train_X[sr_best_variables_5]
+sr_model_5 = LinearRegression()
+sr_model_5.fit(sr_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+sr_test_X = test_X[sr_best_variables_5]
+
+# Model Prediction on top 5 important features
+sr_pred_test = sr_model_5.predict(sr_test_X)
+
+# Fit another boosted model on the 10 most important variables
+dt_vars_5 = imp_dt_features_sort.feature.values[:5] #Top 10 important variables of random forest
+dt_train_X = train_X[dt_vars_5] #Independent variables
+
+dt_model_5 = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=0, min_samples_split=20)
+dt_model_5.fit(dt_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+dt_test_X = test_X[dt_vars_5]
+
+# Model Prediction on top 5 important features
+dt_pred_test = dt_model_5.predict(dt_test_X)
+
+# Fit another random forest model on the 5 most important variables
+rf_vars_5 = imp_rf_features_sort.feature.values[:5] #Top 5 important variables of random forest
+rf_train_X = train_X[rf_vars_5] #Independent variables
+
+rf_model_5 = RandomForestRegressor(max_depth=5, min_impurity_decrease=0, min_samples_split=30)
+rf_model_5.fit(rf_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+rf_test_X = test_X[rf_vars_5]
+
+# Model Prediction on top 5 important features
+rf_pred_test = rf_model_5.predict(rf_test_X)
+
+# Fit another boosted model on the 5 most important variables
+boost_vars_5 = imp_boost_features_sort.feature.values[:5] #Top 5 important variables of random forest
+boost_train_X = train_X[boost_vars_5] #Independent variables
+
+boost_model_5 = GradientBoostingRegressor(max_depth=5, min_impurity_decrease=0, min_samples_split=15)
+boost_model_5.fit(boost_train_X, train_y)
+
+# Select columns in testing data corresponding to top 5 important variables
+boost_test_X = test_X[boost_vars_5]
+
+# Model Prediction on top 5 important features
+boost_pred_test = boost_model_5.predict(boost_test_X)
+
+from dmba import regressionSummary
+
+# Random forest
+print("**************************Random Forest**************************")
+regressionSummary(test_y, rf_pred_test)
+
+# Random forest
+print("\n**************************Boosted Trees**************************")
+regressionSummary(test_y, boost_pred_test)
+
+# Decision Trees
+print("\n**************************Decision Trees**************************")
+regressionSummary(test_y, dt_pred_test)
+
+# Backward Elimination
+print("\n**************************Backward Elimination**************************")
+regressionSummary(test_y, be_pred_test)
+
+# Backward Elimination
+print("\n**************************Forward Selection**************************")
+regressionSummary(test_y, fs_pred_test)
+
+# Backward Elimination
+print("\n**************************Stepwise Regression**************************")
+regressionSummary(test_y, sr_pred_test)
