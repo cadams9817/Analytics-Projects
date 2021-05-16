@@ -1,0 +1,79 @@
+#Connor Adams
+#Assignment 4
+
+require(rpart)
+require(rpart.plot)
+require(randomForest)
+require(caret)
+require(pROC)
+
+ebayAuctions.df <-read.csv("eBayAuctions.csv")
+View(ebayAuctions.df)
+
+ebayAuctions.df$Duration <- factor(ebayAuctions.df$Duration, levels = c(1, 3, 5, 7, 10), 
+                            labels = c("Fast", "Quick", "Average", "Slow", "Long"))
+ebayAuctions.df$Competitive. <- factor(ebayAuctions.df$Competitive., levels = c(0, 1), 
+                              labels = c("Non-Competitive", "Competitive"))
+
+colSums(is.na(ebayAuctions.df))
+
+set.seed(190)
+
+train.index <- sample(c(1:dim(ebayAuctions.df)[1]), dim(ebayAuctions.df)[1]*0.6)
+
+train.df <- ebayAuctions.df[train.index, ]
+valid.df <- ebayAuctions.df[-train.index, ]
+
+prop.table(table(train.df$Competitive.))
+prop.table(table(valid.df$Competitive.))
+
+tree <- rpart(Competitive.~., data = train.df, method = 'class', minbucket = 50, maxdepth = 7)
+
+rpart.plot(tree, extra = 106)
+prp(tree, faclen = 0, cex = 0.8, extra = 1)
+
+tot_count <- function(x, labs, digits, varlen)
+{
+  paste(labs, "\n\nn =", x$frame$n)
+}
+prp(tree, faclen = 0, cex = 0.8, node.fun=tot_count)
+
+only_count <- function(x, labs, digits, varlen)
+{
+  paste(x$frame$n)
+}
+
+boxcols <- c("turquoise", "hotpink1")[tree$frame$yval]
+
+par(xpd=TRUE)
+prp(tree, faclen = 0, cex = 0.8, node.fun=only_count, box.col = boxcols)
+legend("bottomleft", legend = c("Not Competitive","Competitive"), fill = c("turquoise", "hotpink1"),
+       title = "Group")
+
+pred.values <-predict(tree, valid.df, type = 'class')
+
+confusionMatrix(as.factor(pred.values), as.factor(valid.df$Competitive.))
+
+# Random forest
+rf <- randomForest(Competitive. ~ ., data = train.df, ntree = 500, 
+                   mtry = 5, nodesize = 5, importance = TRUE) 
+
+# variable importance plot
+varImpPlot(rf, type = 1)
+
+rf.pred <- predict(rf, valid.df)
+
+head(rf.pred)
+head(valid.df$Competitive.)
+confusionMatrix(rf.pred, valid.df$Competitive.)
+
+# The significant values in this model are Open and Close price because they are so far to the right, so
+# they are way more significant in the model.
+
+# The random forest is more accurate because it takes subsets of the data and makes a tree for each variable,
+# and makes a tree for the total which makes it more accurate because it shows more outcomes in an accurate way.
+# It also more accurately predicts if the auction was competitive or not. 
+
+# I would take out category because it caused many problems when trying to run the model. I think that tsaking it out wouldn't
+# make huge difference when running the model so taking it out would make it so much easier to create the model which
+# would make the model easier to run as well.
