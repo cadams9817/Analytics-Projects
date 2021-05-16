@@ -1,0 +1,72 @@
+# Connor Adams
+# DS 4220-001
+# Professor Armstrong
+# Assignment 2-Multiple Regression
+
+
+library (forecast)
+
+# Load Data
+incomedb <- read.csv("income.csv")
+incomedb <- read.csv("income.csv", fileEncoding = "UTF-8-BOM")
+View(incomedb)
+
+# Create a new feature function
+incomedb$employtimesjobsat <- incomedb$jobsat * incomedb$employ
+
+#Factor Function to specify categorical data
+incomedb$ed <- factor(incomedb$ed, levels = c(1,2,3,4,5),
+                      labels = c("Did Not Complete High School", "High School Degree", "Some College", "College Degree", "Post-Undergraduate Degree"))
+incomedb$jobsat <- factor(incomedb$jobsat, levels = c(1,2,3,4,5),
+                          labels = c("Highly Dissatisfied", "Somewhat Dissatisfied", "Neutral", "Somewhat Satisfied", "Highly Satisfied"))
+incomedb$male = ifelse(incomedb$gender == 'm',1,0)
+
+#Divide the data frame into two new data frames (partition data)
+set.seed(58)  # set seed for reproducing the partition
+train.index <- sample(1:6400, 4480)  
+train.df <- incomedb[train.index, 1:11]
+valid.df <- incomedb[-train.index, 1:11]
+
+#Training set for model 1 (All variables)
+incomedb.lm <- lm(income ~ male + ed + age + 
+                   jobsat + address + marital + employ + reside + employtimesjobsat, data = train.df)
+options(scipen = 999, digits = 3)
+summary(incomedb.lm) # Summary of model 1
+
+#Calculating performance metrics for model 1
+pred_v <- predict(incomedb.lm, valid.df)
+accuracy(pred_v, valid.df$income)
+
+#Histogram for model 1 residuals
+residual_v <- valid.df$income - pred_v
+hist(residual_v, breaks = 10, xlab = "Residuals", main = "Validation Dataset")
+
+
+#Training set for model 2 (Age, Marital, Address, and Reside aren't included)
+incomedb.lm <- lm(income ~ male + ed + 
+                    jobsat + employ + employtimesjobsat, data = train.df)
+options(scipen = 999, digits = 3)
+summary(incomedb.lm) # Summary of model 2
+
+#Calculating performance metrics for model 2
+pred_v <- predict(incomedb.lm, valid.df)
+accuracy(pred_v, valid.df$income)
+
+#Histogram for model 2 residuals
+residual_v <- valid.df$income - pred_v
+hist(residual_v, breaks = 10, xlab = "Residuals", main = "Validation Dataset")
+
+
+#Training set for model 3 (Education, Employ, and Jobsat aren't included)
+incomedb.lm <- lm(income ~ male + age +
+                    address + reside + marital + employtimesjobsat, data = train.df)
+options(scipen = 999, digits = 3)
+summary(incomedb.lm) # Summary of model 3
+
+#Calculating performance metrics for model 3
+pred_v <- predict(incomedb.lm, valid.df)
+accuracy(pred_v, valid.df$income)
+
+#Histogram for model 3 residuals
+residual_v <- valid.df$income - pred_v
+hist(residual_v, breaks = 10, xlab = "Residuals", main = "Validation Dataset")
