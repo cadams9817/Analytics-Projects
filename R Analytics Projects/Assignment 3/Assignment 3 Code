@@ -1,0 +1,133 @@
+install.packages("ISLR")
+require(ISLR)
+
+# This dataset consists of 10,000 students with student loans.  
+# It has four variables - default (0/1), student (0/1), balance (dollars), 
+# and income (dollars).  The outcome variable is default
+
+# Loads the data into a data frame
+
+default.df <- ISLR::Default
+View(default.df)
+
+# Partition the data
+set.seed(22)
+
+#  Your task is to separate the data into training and validation data frames (60% and 40%)
+dim(default.df)[1]
+
+train.index <- sample(c(1:dim(default.df)[1]), dim(default.df)[1]*0.6)  
+train.df <- default.df[train.index, ]
+valid.df <- default.df[-train.index, ]
+
+# Regression 1
+logit.reg <- glm(default ~ student + balance + income, data = train.df, family = "binomial") 
+options(scipen=999)
+summary(logit.reg)
+
+coef <- coef(logit.reg)
+confint <- confint(logit.reg)
+odds <- exp(coef(logit.reg))
+p <- odds/(1+odds)
+
+data.frame(Coefficients = coef, CI = confint, Odds = odds, Prob. = p)
+
+# Regression 1 Calculations
+logit.reg.pred <- predict(logit.reg, valid.df, type="response")
+
+logit.reg.pred
+
+require(caret)
+require(e1071)
+
+pred.values <- ifelse(logit.reg.pred > 0.5, "Yes", "No")
+
+table(pred.values)
+
+# Predicted versus actual for Regression 1
+data.frame(probability = logit.reg.pred[1:15], predicted = pred.values[1:15], 
+           actual = valid.df$default[1:15])
+
+# Performance radio mesures from classification matrix for Regression 1
+confusionMatrix(as.factor(pred.values), as.factor(valid.df$default))
+
+# Partition the data for regression 2
+set.seed(25)
+
+#  Your task is to separate the data into training and validation data frames (60% and 40%)
+dim(default.df)[1]
+
+train.index <- sample(c(1:dim(default.df)[1]), dim(default.df)[1]*0.6)  
+train.df <- default.df[train.index, ]
+valid.df <- default.df[-train.index, ]
+
+# Regression model 2 (balance and income)
+logit.reg <- glm(default ~ balance + income, data = train.df, family = "binomial") 
+options(scipen=999)
+summary(logit.reg)
+
+coef <- coef(logit.reg)
+confint <- confint(logit.reg)
+odds <- exp(coef(logit.reg))
+p <- odds/(1+odds)
+
+data.frame(Coefficients = coef, CI = confint, Odds = odds, Prob. = p)
+
+#Regression 2 Calculations
+logit.reg.pred <- predict(logit.reg, valid.df, type="response")
+
+logit.reg.pred
+
+require(caret)
+require(e1071)
+
+pred.values <- ifelse(logit.reg.pred > 0.5, "Yes", "No")
+
+table(pred.values)
+
+# Predicted versus actual for Regression 2
+data.frame(probability = logit.reg.pred[1:15], predicted = pred.values[1:15], 
+           actual = valid.df$default[1:15])
+
+# Confusion matrix Regression 2
+confusionMatrix(as.factor(pred.values), as.factor(valid.df$default))
+
+# Partition Data for Regression 3
+set.seed(37)
+
+# Regression model 3 (student and income)
+logit.reg <- glm(default ~ student + income, data = train.df, family = "binomial") 
+options(scipen=999)
+summary(logit.reg)
+
+coef <- coef(logit.reg)
+confint <- confint(logit.reg)
+odds <- exp(coef(logit.reg))
+p <- odds/(1+odds)
+
+data.frame(Coefficients = coef, CI = confint, Odds = odds, Prob. = p)
+
+#Regression 3 Calculations
+logit.reg.pred <- predict(logit.reg, valid.df, type="response")
+
+logit.reg.pred
+
+require(caret)
+require(e1071)
+
+pred.values <- ifelse(logit.reg.pred > 0.5, "Yes", "No")
+
+table(pred.values)
+
+# Predicted versus actual for Regression 3
+data.frame(probability = logit.reg.pred[1:15], predicted = pred.values[1:15], 
+           actual = valid.df$default[1:15])
+
+# Confusion matrix Regression 3
+confusionMatrix(as.factor(pred.values), as.factor(valid.df$default))
+#  You are then to develop three regression models.  The base model will consist 
+#  of all three predictors.  Create a more simplistic model and one that considers 
+#  interactive terms.  Assess the three models using your validation data using 
+#  classification matrices and the ratios.  Make a recommendation on your preferred model
+#  and why.  Also explain the coefficients of the recommended model in terms of the impact on 
+#  the prediction score.
